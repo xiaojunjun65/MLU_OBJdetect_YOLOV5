@@ -1,0 +1,1 @@
+python train.py --dataset_path /workspace/volume/guojun/Train/ObjDetection/dataset/fire_hat/img  --label_name person fire smoke hat --batch_size 32 --epochs 200 --save_model /workspace/volume/guojun/Train/ObjDetection/outputs/best.pth --device mlu

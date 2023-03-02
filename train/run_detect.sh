@@ -1,0 +1,1 @@
+python mydetect.py --weights best.pt --cfg models/yolov5s.yaml --data data/buckle.yaml --source ../dataset/mountaineering_buckle/val --device mlu

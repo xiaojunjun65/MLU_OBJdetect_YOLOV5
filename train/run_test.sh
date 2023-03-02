@@ -1,0 +1,1 @@
+python test.py --model /workspace/outputs/best.pth  --num_classes 1 --device mlu

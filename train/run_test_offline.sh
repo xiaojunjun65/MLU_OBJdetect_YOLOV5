@@ -1,0 +1,3 @@
+# python test_offline.py --model ./runs/best.pth --label_name NG --dataset_path ../dataset/mountaineering_buckle/val --quantized_mode 1 --core_version MLU270 --core_number 16 --output_path ./output --device mlu
+python test_offline.py --model /workspace/outputs/best.pth --label_name 瑕疵 --dataset_path ../dataset/mountaineering_buckle/val --quantized_mode 1 --core_version MLU270 --core_number 16 --output_path ./output --device mlu
+# python test_offline.py --model ./runs/best.pth --label_name NG --dataset_path ../dataset/mountaineering_buckle/val --quantized_mode 1 --core_version MLU270 --core_number 16 --output_path ./output --device gpu
