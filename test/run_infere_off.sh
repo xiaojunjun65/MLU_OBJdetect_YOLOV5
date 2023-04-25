@@ -1,1 +1,1 @@
-python inference_off.py  --input_img /workspace/volume/guojun/Train/ObjDetection/dataset/fire_hat/img/000002.jpg --off_model /workspace/volume/guojun/Train/ObjDetection/offline/best-mlu270.cambricon --label_name 0 1 2 3
+python inference_off.py  --input_img /workspace/volume/model-x/yolov5/dataset/000007.jpg --off_model /workspace/volume/model-x/yolov5/offline/mlu270.cambricon --label_name 0 1 2 3

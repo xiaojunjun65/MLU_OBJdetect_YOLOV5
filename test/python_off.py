@@ -13,7 +13,7 @@ class DataShape(Structure):
 
 class ModelOffline():
     def __init__(self, offline_model_path, device_id):            
-        libc = cdll.LoadLibrary("/usr/local/lib/libinferEngine.so")
+        libc = cdll.LoadLibrary("libinferEngine.so")
         loadCambriconModel =  libc.loadCambriconModel
         loadCambriconModel.argtypes = [c_char_p, c_uint]
         loadCambriconModel.restype = c_int

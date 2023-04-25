@@ -85,7 +85,8 @@ WORLD_SIZE = int(os.getenv('WORLD_SIZE', 1))
 def train(hyp,  # path/to/hyp.yaml or hyp dictionary
           opt,
           device,
-          callbacks
+          callbacks,
+          tb_writer =None
           ):
     save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
@@ -281,11 +282,13 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
         if not resume:
             labels = np.concatenate(dataset.labels, 0)
-            # c = torch.tensor(labels[:, 0])  # classes
+            c = torch.tensor(labels[:, 0])  # classes
             # cf = torch.bincount(c.long(), minlength=nc) + 1.  # frequency
             # model._initialize_biases(cf.to(device))
             if plots:
                 plot_labels(labels, names, save_dir)
+                if tb_writer:
+                    tb_writer.add_histogram('classes',c,0)
 
             # Anchors
             if not opt.noautoanchor:
@@ -439,6 +442,14 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                            plots=False,
                                            callbacks=callbacks,
                                            compute_loss=compute_loss)
+            # Log
+            tags = ['train/box_loss', 'train/obj_loss', 'train/cls_loss',  # train loss
+                    'metrics/precision', 'metrics/recall', 'metrics/mAP_0.5', 'metrics/mAP_0.5:0.95',
+                    'val/box_loss', 'val/obj_loss', 'val/cls_loss',  # val loss
+                    'x/lr0', 'x/lr1', 'x/lr2']  # params
+            for x, tag in zip(list(mloss[:-1]) + list(results) + lr, tags):
+                if tb_writer:
+                    tb_writer.add_scalar(tag, x, epoch)  # tensorboard
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
@@ -607,74 +618,7 @@ def main(opt, callbacks=Callbacks()):
         # opt.save_dir = str(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))
         opt.save_dir = opt.project
         os.makedirs(opt.save_dir, exist_ok=True)
-    ###################待修改部分###########################################
-    # #make_txt
-    # classes = opt.label_name
-    # LOGGER.info('name_xml to txt ')
-    # files_list = os.listdir(opt.dataset_path) 
-    # filter_files_list = [fn for fn in files_list if fn.endswith("xml")]
-    # num = len(filter_files_list)
     
-    # ftrain1 = open(opt.dataset_path+'/name.txt', 'w')
-    # for i in range(num):
-    #     name = filter_files_list[i][:-4] + '\n'
-    #     ftrain1.write(name)
-    # ftrain1.close()
-    
-    # LOGGER.info('SPlit data train and val ')
-    # num = len(filter_files_list)  #统计所有的标注文件
-    # list_num = range(num)
-    # tv = int(num * 0.1)  # 设置训练验证集的数目
-    # tr = int(tv * 0.9)      # 设置训练集的数目
-    # trainval = random.sample(list_num, tv)
-    # train = random.sample(trainval, tr)
-
-    # # txt 文件写入的只是xml 文件的文件名（数字），没有后缀，如下图。
-    # ftrainval = open(opt.save_dir+'/trainval.txt', 'w')
-    # ftest = open(opt.save_dir+'/test.txt', 'w')
-    # ftrain = open(opt.save_dir+'/train.txt', 'w')
-    # fval = open(opt.save_dir+'/val.txt', 'w')
-
-    # for i in list_num:
-    #     name = opt.dataset_path+"/"+filter_files_list[i][:-4]+'.jpg' + '\n'
-    #     if i in trainval:
-    #         ftrainval.write(name)
-    #         if i in train:
-    #             ftest.write(name)
-    #         else:
-    #             fval.write(name)
-    #     else:
-    #         ftrain.write(name)
-
-    # ftrainval.close()
-    # ftrain.close()
-    # fval.close()
-    # ftest.close()
-    # LOGGER.info('xml to coco txt ')
-    
-    # image_ids = open(opt.dataset_path+'/name.txt').read().strip().split()
-    # for image_id in image_ids:
-    #     in_file = open(opt.dataset_path+'/%s.xml' % (image_id))
-    #     out_file = open(opt.dataset_path+'/%s.txt' % (image_id), 'w')
-    #     tree = ET.parse(in_file)
-    #     root = tree.getroot()
-    #     size = root.find('size')
-    #     w = int(size.find('width').text)
-    #     h = int(size.find('height').text)
-
-    #     for obj in root.iter('object'):
-    #         difficult = obj.find('difficult').text
-    #         cls = obj.find('name').text
-    #         if cls not in classes or int(difficult) == 1:
-    #             continue
-    #         cls_id = classes.index(cls)
-    #         xmlbox = obj.find('bndbox')
-    #         b = (float(xmlbox.find('xmin').text), float(xmlbox.find('xmax').text), float(xmlbox.find('ymin').text),
-    #             float(xmlbox.find('ymax').text))
-    #         bb = convert((w, h), b)
-    #         out_file.write(str(cls_id) + " " + " ".join([str(a) for a in bb]) + '\n')
-    
-    #######################################################################################
     # DDP mode
     if opt.device == 'gpu':
         opt.device = ''
@@ -688,10 +632,13 @@ def main(opt, callbacks=Callbacks()):
         torch.cuda.set_device(LOCAL_RANK)
         device = torch.device('cuda', LOCAL_RANK)
         dist.init_process_group(backend="nccl" if dist.is_nccl_available() else "gloo")
-
+    from torch.utils.tensorboard import SummaryWriter
     # Train
     if not opt.evolve:
-        train(opt.hyp, opt, device, callbacks)
+        tb_write = None
+        tb_write = SummaryWriter(opt.save_dir)
+        train(opt.hyp, opt, device, callbacks,tb_write)
+        
         if WORLD_SIZE > 1 and RANK == 0:
             LOGGER.info('Destroying process group... ')
             dist.destroy_process_group()
@@ -784,12 +731,12 @@ def main(opt, callbacks=Callbacks()):
                     f'Use best hyperparameters example: $ python train.py --hyp {evolve_yaml}')
 
 
-def run(**kwargs):
-    # Usage: import train; train.run(data='coco128.yaml', imgsz=320, weights='yolov5m.pt')
-    opt = parse_opt(True)
-    for k, v in kwargs.items():
-        setattr(opt, k, v)
-    main(opt)
+# def run(**kwargs):
+#     # Usage: import train; train.run(data='coco128.yaml', imgsz=320, weights='yolov5m.pt')
+#     opt = parse_opt(True)
+#     for k, v in kwargs.items():
+#         setattr(opt, k, v)
+#     main(opt)
 
 
 if __name__ == "__main__":

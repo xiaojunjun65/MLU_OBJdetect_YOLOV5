@@ -1,1 +1,2 @@
-python train.py --dataset_path /workspace/volume/guojun/Train/ObjDetection/dataset/fire_hat/img  --label_name person fire smoke hat --batch_size 32 --epochs 200 --save_model /workspace/volume/guojun/Train/ObjDetection/outputs/best.pth --device mlu
+python data_trans.py --dataset_path /workspace/volume/model-x/yolov5/dataset  --label_name person fire smoke hat --save_model /workspace/volume/model-x/yolov5/output/best.pth --save_dir /workspace/volume/model-x/yolov5/output
+python train.py --dataset_path /workspace/volume/model-x/yolov5/dataset  --label_name person fire smoke hat --batch_size 64 --epochs 100 --project /workspace/volume/model-x/yolov5/output --save_model /workspace/volume/model-x/yolov5/output/best.pth --device mlu

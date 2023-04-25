@@ -305,9 +305,11 @@ def main(opt):
                 # label = f'{names[int(cls)]} {conf:.2f}'
                 img_result = plot_one_box(xyxy, img0, line_thickness=3)
                 print("xyxy:", xyxy)
+                print("conf  or cls",conf,cls)
+                
                 
     
-    cv2.imwrite("aa.jpg",img_result)
+    cv2.imwrite("result.jpg",img_result)
     
 
 
@@ -317,7 +319,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='route_inference.py')
     parser.add_argument('--input_img', type=str, default='/workspace/volume/guojun/Train/Classification/dataset/test_cap/10.bmp', help='img not dir v1.0')
     parser.add_argument('--off_model', type=str, default='/workspace/volume/guojun/Train/Classification/offline/270cap_classification.cambricon', help='model_path')
-    parser.add_argument("--input_size", type=int, default=100, help="model_size")
+    parser.add_argument("--input_size", type=int, default=640, help="model_size")
     parser.add_argument("--label_name", nargs="+", required=False, help="labelnum")
     opt = parser.parse_args()
     main(opt)
